@@ -8,7 +8,4 @@ public class HomeConfig {
 
     @SerializedName("damageTickCooldown")
     public int DAMAGE_COOLDOWN = 100;
-
-    @SerializedName("homeWarpCooldownSecond")
-    public int HOME_WARP_COOLDOWN_SECOND = 15;
 }

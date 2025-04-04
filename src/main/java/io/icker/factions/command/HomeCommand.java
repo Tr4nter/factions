@@ -8,7 +8,6 @@ import io.icker.factions.FactionsMod;
 import io.icker.factions.api.persistents.Claim;
 import io.icker.factions.api.persistents.Faction;
 import io.icker.factions.api.persistents.Home;
-import io.icker.factions.api.persistents.User;
 import io.icker.factions.mixin.DamageTrackerAccessor;
 import io.icker.factions.util.Command;
 import io.icker.factions.util.Message;
@@ -21,8 +20,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 
-import java.time.Instant;
-import java.util.Date;
 import java.util.HashSet;
 
 public class HomeCommand implements Command {
@@ -32,15 +29,14 @@ public class HomeCommand implements Command {
 
         if (player == null) return 0;
 
-        User user = Command.getUser(player);
-        Faction faction = user.getFaction();
+        Faction faction = Command.getUser(player).getFaction();
 
         if (faction == null) return 0;
 
-        return execGo(player, user, faction);
+        return execGo(player, faction);
     }
 
-    public int execGo(ServerPlayerEntity player, User user, Faction faction) {
+    public int execGo(ServerPlayerEntity player, Faction faction) {
         Home home = faction.getHome();
 
         if (home == null) {
@@ -62,20 +58,6 @@ public class HomeCommand implements Command {
             return 0;
         }
 
-        long elapsed_time = Date.from(Instant.now()).getTime() - user.homeCooldown;
-        if (elapsed_time < FactionsMod.CONFIG.HOME.HOME_WARP_COOLDOWN_SECOND * 1000) {
-            new Message(
-                            "Cannot warp home while on warp cooldown, please wait %.0f seconds",
-                            (double)
-                                            (FactionsMod.CONFIG.HOME.HOME_WARP_COOLDOWN_SECOND
-                                                            * 1000
-                                                    - elapsed_time)
-                                    / 1000.0)
-                    .fail()
-                    .send(player, false);
-            return 0;
-        }
-
         if (((DamageTrackerAccessor) player.getDamageTracker()).getAgeOnLastDamage() == 0
                 || player.age
                                 - ((DamageTrackerAccessor) player.getDamageTracker())
@@ -83,8 +65,6 @@ public class HomeCommand implements Command {
                         > FactionsMod.CONFIG.HOME.DAMAGE_COOLDOWN) {
             player.teleport(
                     world, home.x, home.y, home.z, new HashSet<>(), home.yaw, home.pitch, false);
-            user.homeCooldown = Date.from(Instant.now()).getTime();
-
             new Message("Warped to faction home").send(player, false);
         } else {
             new Message("Cannot warp while in combat").fail().send(player, false);
